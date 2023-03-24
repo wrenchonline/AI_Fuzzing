@@ -2,6 +2,8 @@ from unicorn import *
 from unicorn.x86_const import *
 from keystone import *
 import capstone
+import json
+
 
 #fuzzing + ai
 
@@ -50,8 +52,11 @@ msg:
     .ascii "eval\n"
 """
 
+opt = list()
+
 
 def hook_code(uc, address, size, user_data):
+    global opt
     # Disassemble instruction at address
     md = capstone.Cs(capstone.CS_ARCH_X86, capstone.CS_MODE_64)
     code = uc.mem_read(address, size)
@@ -62,6 +67,12 @@ def hook_code(uc, address, size, user_data):
     print(">>> Instruction disassembly:")
     for i in asm:
         print("    0x%x:\t%s\t%s" % (i.address, i.mnemonic, i.op_str))
+        disassembly = {
+            'address': i.address,
+            'mnemonic': i.mnemonic,
+            'op_str': i.op_str,
+        }
+        opt.append(disassembly)
 
     rsp = uc.reg_read(UC_X86_REG_RSP)
     print(">>> RSP is 0x%x" % rsp)
@@ -79,24 +90,18 @@ def hook_code(uc, address, size, user_data):
         hex_data = " ".join(f"{b:02x}" for b in data)
         ascii_data = "".join(chr(b) if 32 <= b < 127 else "." for b in data)
         print(f"0x{i:x}: {hex_data}  {ascii_data}")
-
-    # print("RAX Memory:")
-    # for i in range(rax, rax+100, 16):
+    # print("MSG Memory:")
+    # for i in range(0x190000, 0x190000+0x20, 16):
     #     data = uc.mem_read(i, 16)
     #     hex_data = " ".join(f"{b:02x}" for b in data)
     #     ascii_data = "".join(chr(b) if 32 <= b < 127 else "." for b in data)
     #     print(f"0x{i:x}: {hex_data}  {ascii_data}")
 
-    print("MSG Memory:")
-    for i in range(0x190000, 0x190000+0x20, 16):
-        data = uc.mem_read(i, 16)
-        hex_data = " ".join(f"{b:02x}" for b in data)
-        ascii_data = "".join(chr(b) if 32 <= b < 127 else "." for b in data)
-        print(f"0x{i:x}: {hex_data}  {ascii_data}")
-
     while True:
         cmd = input("Press enter to step or q to quit: ")
         if cmd == "q":
+            with open('bin_array.json', 'w+') as f:
+                json.dump(opt, f)
             exit(0)
         elif cmd == "rax":
             print("RAX Memory:")
