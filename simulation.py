@@ -4,6 +4,10 @@ from keystone import *
 import capstone
 import json
 
+from queue import Queue
+
+# 创建一个空队列
+q = Queue()
 
 #fuzzing + ai
 
@@ -57,6 +61,10 @@ opt = list()
 
 def hook_code(uc, address, size, user_data):
     global opt
+    mdisassembly = None
+    isCall = False
+    assert user_data, f"Invalid action {user_data}"
+    q = user_data
     # Disassemble instruction at address
     md = capstone.Cs(capstone.CS_ARCH_X86, capstone.CS_MODE_64)
     code = uc.mem_read(address, size)
@@ -72,6 +80,10 @@ def hook_code(uc, address, size, user_data):
             'mnemonic': i.mnemonic,
             'op_str': i.op_str,
         }
+        # 是否有call
+        if i.mnemonic == "call":
+            isCall = True
+        mdisassembly = disassembly
         opt.append(disassembly)
 
     rsp = uc.reg_read(UC_X86_REG_RSP)
@@ -90,6 +102,12 @@ def hook_code(uc, address, size, user_data):
         hex_data = " ".join(f"{b:02x}" for b in data)
         ascii_data = "".join(chr(b) if 32 <= b < 127 else "." for b in data)
         print(f"0x{i:x}: {hex_data}  {ascii_data}")
+
+    # 读取返回地址
+    hex_data = uc.mem_read(rsp, 8)
+    print(hex_data)
+    # q.put(mdisassembly)
+
     # print("MSG Memory:")
     # for i in range(0x190000, 0x190000+0x20, 16):
     #     data = uc.mem_read(i, 16)
@@ -97,33 +115,33 @@ def hook_code(uc, address, size, user_data):
     #     ascii_data = "".join(chr(b) if 32 <= b < 127 else "." for b in data)
     #     print(f"0x{i:x}: {hex_data}  {ascii_data}")
 
-    while True:
-        cmd = input("Press enter to step or q to quit: ")
-        if cmd == "q":
-            with open('bin_array.json', 'w+') as f:
-                json.dump(opt, f)
-            exit(0)
-        elif cmd == "rax":
-            print("RAX Memory:")
-            for i in range(rax, rax+100, 16):
-                data = uc.mem_read(i, 16)
-                hex_data = " ".join(f"{b:02x}" for b in data)
-                ascii_data = "".join(chr(b) if 32 <= b <
-                                     127 else "." for b in data)
-                print(f"0x{i:x}: {hex_data}  {ascii_data}")
-        elif cmd == "rsi":
-            print("rsi Memory:")
-            for i in range(rsi, rsi+100, 16):
-                data = uc.mem_read(i, 16)
-                hex_data = " ".join(f"{b:02x}" for b in data)
-                ascii_data = "".join(chr(b) if 32 <= b <
-                                     127 else "." for b in data)
-                print(f"0x{i:x}: {hex_data}  {ascii_data}")
-        elif cmd == "":
-            break
+    # while True:
+    #     cmd = input("Press enter to step or q to quit: ")
+    #     if cmd == "q":
+    #         with open('bin_array.json', 'w+') as f:
+    #             json.dump(opt, f)
+    #         exit(0)
+    #     elif cmd == "rax":
+    #         print("RAX Memory:")
+    #         for i in range(rax, rax+100, 16):
+    #             data = uc.mem_read(i, 16)
+    #             hex_data = " ".join(f"{b:02x}" for b in data)
+    #             ascii_data = "".join(chr(b) if 32 <= b <
+    #                                  127 else "." for b in data)
+    #             print(f"0x{i:x}: {hex_data}  {ascii_data}")
+    #     elif cmd == "rsi":
+    #         print("rsi Memory:")
+    #         for i in range(rsi, rsi+100, 16):
+    #             data = uc.mem_read(i, 16)
+    #             hex_data = " ".join(f"{b:02x}" for b in data)
+    #             ascii_data = "".join(chr(b) if 32 <= b <
+    #                                  127 else "." for b in data)
+    #             print(f"0x{i:x}: {hex_data}  {ascii_data}")
+    #     elif cmd == "":
+    #         break
 
 
-def emulate_program(payload=""):
+def emulate_program(queue):
     # Initialize Unicorn engine
     uc = Uc(UC_ARCH_X86, UC_MODE_64)
 
@@ -149,7 +167,7 @@ def emulate_program(payload=""):
     uc.mem_write(0x0a646c72, evalencoding)
 
     # Hook read system call
-    uc.hook_add(UC_HOOK_CODE, hook_code)
+    uc.hook_add(UC_HOOK_CODE, hook_code, user_data={queue})
     #uc.hook_add(UC_HOOK_INSN, hook_read, arg=(0, ADDRESS + 0x10, 400))
 
     # Start emulation
@@ -158,4 +176,4 @@ def emulate_program(payload=""):
 
 
 if __name__ == '__main__':
-    emulate_program()
+    emulate_program(q)

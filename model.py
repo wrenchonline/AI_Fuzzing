@@ -52,7 +52,6 @@ def epsilon_greedy_policy(state, epsilon, action_dim, device, Q):
             return q_values.argmax(dim=1).item()
 
 
-# 训练函数
 def train(env_name, num_episodes, batch_size, gamma, epsilon, epsilon_min, epsilon_decay, target_update, lr):
     env = gym.make(env_name)
     obs_dim = env.observation_space.shape[0]
@@ -67,6 +66,7 @@ def train(env_name, num_episodes, batch_size, gamma, epsilon, epsilon_min, epsil
 
     episode_rewards = []
     state = env.reset()
+    last_reward = None
 
     for i_episode in range(num_episodes):
         episode_reward = 0
@@ -81,9 +81,12 @@ def train(env_name, num_episodes, batch_size, gamma, epsilon, epsilon_min, epsil
             if done:
                 state = env.reset()
                 episode_rewards.append(episode_reward)
-                break
+                if last_reward is None or episode_reward != last_reward:
+                    last_reward = episode_reward
+                else:
+                    break
 
-            if len(buffer) > batch_size:
+            if len(buffer) > batch_size and episode_reward != last_reward:
                 # 抽样
                 state_batch, action_batch, reward_batch, next_state_batch, done_batch = buffer.sample(
                     batch_size)
@@ -127,7 +130,7 @@ def train(env_name, num_episodes, batch_size, gamma, epsilon, epsilon_min, epsil
     return Q
 
 
-train(env_name='CartPole-v0',
+train(env_name='MyEnv',
       num_episodes=1000,
       batch_size=64,
       gamma=0.99,

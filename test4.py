@@ -1,21 +1,27 @@
+import json
+
 import torchtext.vocab as vocab
 from torchtext.data import Field
 import torch
+
+
+# 从文件中读取 JSON 数据
+with open('bin_array.json', 'r') as f:
+    datas = json.load(f)
+
+# 打印读取到的 JSON 数据
+print(datas)
+
+myvocab = []
+for dat in datas:
+    myvocab.append(dat["mnemonic"])
+    myvocab.append(dat["op_str"])
+
+myvocabs = " ".join(myvocab)
 # 定义Field对象
 text_field = Field(tokenize=lambda x: x.split())
-
-# 要转换的字符串
-s = "byte ptr [rdi], byte ptr [rsi]"
-
 # 预处理字符串
-preprocessed = text_field.preprocess(s)
-
-letters = [chr(i) for i in range(ord('A'), ord('z')+1)]
-myletters = " ".join(letters)
-
-
-# 预处理字符串
-premyletters = text_field.preprocess(myletters)
+preprocessed = text_field.preprocess(myvocabs)
 
 
 # 构建词汇表
@@ -30,7 +36,8 @@ print('Vocabulary words:', text_field.vocab.itos)
 
 
 # 将字符串转换为词汇表索引
-indexed = [text_field.vocab.stoi[token] for token in premyletters]
+indexed = [text_field.vocab.stoi[token] for token in preprocessed]
+
 
 # 将索引转换为张量
 tensor = torch.Tensor(indexed)
