@@ -7,9 +7,8 @@ import torch.optim as optim
 import torch.nn.functional as F
 from collections import deque
 
+
 # 神经网络模型
-
-
 class DQN(nn.Module):
     def __init__(self, obs_dim, action_dim):
         super(DQN, self).__init__()
@@ -22,9 +21,8 @@ class DQN(nn.Module):
         x = F.relu(self.fc2(x))
         return self.fc3(x)
 
+
 # 定义经验回放缓冲区
-
-
 class ReplayBuffer():
     def __init__(self, capacity):
         self.capacity = capacity
@@ -127,3 +125,14 @@ def train(env_name, num_episodes, batch_size, gamma, epsilon, epsilon_min, epsil
             print("Episode {}/{}: Average reward = {:.2f}".format(i_episode +
                   1, num_episodes, np.mean(episode_rewards[-100:])))
     return Q
+
+
+train(env_name='CartPole-v0',
+      num_episodes=1000,
+      batch_size=64,
+      gamma=0.99,
+      epsilon=1.0,
+      epsilon_min=0.01,
+      epsilon_decay=0.995,
+      target_update=10,
+      lr=0.001)
