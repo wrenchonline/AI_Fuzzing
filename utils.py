@@ -11,12 +11,3 @@ def generate_payload_string(min_length, max_length):
     # 生成随机字符串
     payload = ''.join(random.choice(characters) for _ in range(length))
     return payload
-
-
-# payload = generate_payload_string(1, 12)
-# print(payload)
-
-
-# action_space = spaces.Discrete(12)
-
-# print(action_space.sample())

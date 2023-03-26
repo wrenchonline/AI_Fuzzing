@@ -46,7 +46,7 @@ overflow:
 msg = """
 .section .mydata, "aw"
 msg:
-    .ascii "Hello world\n"
+    .ascii "%s"
 """
 
 # 这个是Hello world的跳转的地址
@@ -58,13 +58,17 @@ msg:
 
 opt = list()
 
+#least_RSP = None
+
 
 def hook_code(uc, address, size, user_data):
     global opt
     mdisassembly = None
     isCall = False
+    #global least_RSP
     assert user_data, f"Invalid action {user_data}"
-    q = user_data
+    q = user_data["queue"]
+    # q.put("111")
     # Disassemble instruction at address
     md = capstone.Cs(capstone.CS_ARCH_X86, capstone.CS_MODE_64)
     code = uc.mem_read(address, size)
@@ -83,6 +87,9 @@ def hook_code(uc, address, size, user_data):
         # 是否有call
         if i.mnemonic == "call":
             isCall = True
+            # 读取返回地址
+            # least_RSP = uc.mem_read(rsp, 8)
+            # print(hex_data)
         mdisassembly = disassembly
         opt.append(disassembly)
 
@@ -106,7 +113,13 @@ def hook_code(uc, address, size, user_data):
     # 读取返回地址
     hex_data = uc.mem_read(rsp, 8)
     print(hex_data)
-    # q.put(mdisassembly)
+    # if least_RSP == hex_data:
+    #     pass
+    # global isCall
+    debug_msg = {"disassembly": mdisassembly,
+                 "isCall": isCall, "return_adress": hex_data}
+    q.put(debug_msg)
+    # print("sssss")
 
     # print("MSG Memory:")
     # for i in range(0x190000, 0x190000+0x20, 16):
@@ -141,9 +154,10 @@ def hook_code(uc, address, size, user_data):
     #         break
 
 
-def emulate_program(queue):
+def emulate_program(queue, payload):
     # Initialize Unicorn engine
     uc = Uc(UC_ARCH_X86, UC_MODE_64)
+    global msg
 
     # Map memory for program code and stack
     ADDRESS = 0x100000
@@ -156,7 +170,8 @@ def emulate_program(queue):
     # Compile assembly code using Keystone
     ks = Ks(KS_ARCH_X86, KS_MODE_64)
     encoding, _ = ks.asm(Main, as_bytes=True)
-    msgencoding, _ = ks.asm(msg, as_bytes=True)
+    new_msg = msg % payload
+    msgencoding, _ = ks.asm(new_msg, as_bytes=True)
     evalencoding, _ = ks.asm(meval, as_bytes=True)
     # Write code to memory and set PC to entry point
     uc.mem_write(ADDRESS, encoding)
@@ -167,13 +182,15 @@ def emulate_program(queue):
     uc.mem_write(0x0a646c72, evalencoding)
 
     # Hook read system call
-    uc.hook_add(UC_HOOK_CODE, hook_code, user_data={queue})
+    uc.hook_add(UC_HOOK_CODE, hook_code, user_data={"queue": queue})
     #uc.hook_add(UC_HOOK_INSN, hook_read, arg=(0, ADDRESS + 0x10, 400))
 
     # Start emulation
+    try:
+        uc.emu_start(ADDRESS, ADDRESS + len(encoding) + 0x10000)
+        queue.put(None)
+    except Exception as e:
+        queue.put(None)
 
-    uc.emu_start(ADDRESS, ADDRESS + len(encoding) + 0x10000)
-
-
-if __name__ == '__main__':
-    emulate_program(q)
+    # if __name__ == '__main__':
+    #     emulate_program(q)

@@ -3,7 +3,7 @@ import json
 import torchtext.vocab as vocab
 from torchtext.data import Field
 import torch
-
+import pickle
 
 # 从文件中读取 JSON 数据
 with open('bin_array.json', 'r') as f:
@@ -44,3 +44,8 @@ tensor = torch.Tensor(indexed)
 
 # 打印张量
 print(tensor)
+
+
+# 保存词汇表
+with open('vocab.pkl', 'wb') as f:
+    pickle.dump(text_field.vocab, f)
