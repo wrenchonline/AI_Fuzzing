@@ -79,6 +79,8 @@ class MyEnv(gym.Env):
         self.isreset = True
         self.record_return_addr = None
         self.iscall = False
+        self.isCheckRet = False
+        self.step_count = 0
         return self.state
 
     def step(self, action):
@@ -88,6 +90,7 @@ class MyEnv(gym.Env):
         assert self.action_space.contains(action), f"Invalid action {action}"
         if self.isreset:
             payload = generate_payload_string(1, action+1)
+            print(payload)
             self.t = Thread(target=emulate_program, args=(q, payload))
             self.isreset = False
             self.t.start()
@@ -114,13 +117,19 @@ class MyEnv(gym.Env):
 
         # 关键如果call，我们记录返回地址
         if item['isCall']:
-            self.iscall = item['isCall']
-            self.record_return_addr = item['return_adress']
+            self.iscall = True
             reward = 0
             done = False
-        elif self.record_return_addr:
-            if self.record_return_addr == item['return_adress']:
+        if self.iscall:
+            self.step_count += 1
+            if self.step_count > 3:
+                self.record_return_addr = item['return_adress']
+                self.iscall = False
+                self.isCheckRet = True
+        if self.record_return_addr:
+            if self.record_return_addr != item['return_adress']:
                 reward += 10
+                done = True
         self.state = combine_tensors(
             disassembly_tensor, return_address_tensor, is_call_tensor)
 
@@ -136,10 +145,10 @@ class MyEnv(gym.Env):
 y = MyEnv()
 
 while True:
-    state, reward, done, _ = y.step(10)
+    state, reward, done, _ = y.step(2)
+    print("reward %d\t\n" % reward)
     if done:
         break
-    print("reward %d\t\n" % reward)
 
 
 payload = generate_payload_string(1, 2)

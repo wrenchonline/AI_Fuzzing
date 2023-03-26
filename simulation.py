@@ -6,7 +6,7 @@ import json
 
 from queue import Queue
 
-debug_mode = False
+debug_mode = True
 # 创建一个空队列
 q = Queue()
 
@@ -15,24 +15,30 @@ q = Queue()
 
 Main = """
 _start:
-    sub rsp, 100
+    push rbp
+    sub rsp, 20
     mov rax, 0x190000
     push rax
     push 12
     call overflow
-    add rsp, 100
-    mov rax, 0
+    add rsp, 20
+    xor rax, 0
     ret
 overflow:
     push rbp
     mov rbp, rsp
-    sub rsp, rsi
-    mov r8,rsi
-    mov rsi, rax
-    lea rdi, [rsp]
-    MOV rcx, 22
+    sub rsp, 12
+    mov rcx ,100
+    mov rdi,0x190000
+    cld
+    repne scasb
+    sub rdi, 0x190000
+    mov rax,rdi
+    mov rsi, 0x190000
+    lea rdi, [rsp+8]
+    MOV rcx, rax
     rep movsb
-    add rsp, r8
+    add rsp, 12
     mov rsp, rbp
     pop rbp
     ret
@@ -67,6 +73,7 @@ def hook_code(uc, address, size, user_data):
     global opt
     mdisassembly = None
     isCall = False
+    isRet = False
     #global least_RSP
     assert user_data, f"Invalid action {user_data}"
     q = user_data["queue"]
@@ -90,6 +97,9 @@ def hook_code(uc, address, size, user_data):
         # 是否有call
         if i.mnemonic == "call":
             isCall = True
+        # 是否有ret
+        if i.mnemonic == "call":
+            isRet = True
             # 读取返回地址
             # least_RSP = uc.mem_read(rsp, 8)
             # print(hex_data)
@@ -107,6 +117,13 @@ def hook_code(uc, address, size, user_data):
     rsi = uc.reg_read(UC_X86_REG_RSI)
     if debug_mode:
         print(">>> rsi is 0x%x" % rsi)
+
+    rbp = uc.reg_read(UC_X86_REG_RBP)
+    if debug_mode:
+        print(">>> rbp is 0x%x" % rbp)
+    rdi = uc.reg_read(UC_X86_REG_RDI)
+    if debug_mode:
+        print(">>> rdi is 0x%x" % rdi)
 
     # Print rsp memory values
     if debug_mode:
@@ -126,7 +143,7 @@ def hook_code(uc, address, size, user_data):
     #     pass
     # global isCall
     debug_msg = {"disassembly": mdisassembly,
-                 "isCall": isCall, "return_adress": hex_data}
+                 "isCall": isCall, "return_adress": hex_data, "isRet": isRet}
     q.put(debug_msg)
     # print("sssss")
 
@@ -137,30 +154,38 @@ def hook_code(uc, address, size, user_data):
     #     ascii_data = "".join(chr(b) if 32 <= b < 127 else "." for b in data)
     #     print(f"0x{i:x}: {hex_data}  {ascii_data}")
 
-    # while True:
-    #     cmd = input("Press enter to step or q to quit: ")
-    #     if cmd == "q":
-    #         with open('bin_array.json', 'w+') as f:
-    #             json.dump(opt, f)
-    #         exit(0)
-    #     elif cmd == "rax":
-    #         print("RAX Memory:")
-    #         for i in range(rax, rax+100, 16):
-    #             data = uc.mem_read(i, 16)
-    #             hex_data = " ".join(f"{b:02x}" for b in data)
-    #             ascii_data = "".join(chr(b) if 32 <= b <
-    #                                  127 else "." for b in data)
-    #             print(f"0x{i:x}: {hex_data}  {ascii_data}")
-    #     elif cmd == "rsi":
-    #         print("rsi Memory:")
-    #         for i in range(rsi, rsi+100, 16):
-    #             data = uc.mem_read(i, 16)
-    #             hex_data = " ".join(f"{b:02x}" for b in data)
-    #             ascii_data = "".join(chr(b) if 32 <= b <
-    #                                  127 else "." for b in data)
-    #             print(f"0x{i:x}: {hex_data}  {ascii_data}")
-    #     elif cmd == "":
-    #         break
+    while True:
+        cmd = input("Press enter to step or q to quit: ")
+        if cmd == "q":
+            with open('bin_array.json', 'w+') as f:
+                json.dump(opt, f)
+            exit(0)
+        elif cmd == "rax":
+            print("RAX Memory:")
+            for i in range(rax, rax+100, 16):
+                data = uc.mem_read(i, 16)
+                hex_data = " ".join(f"{b:02x}" for b in data)
+                ascii_data = "".join(chr(b) if 32 <= b <
+                                     127 else "." for b in data)
+                print(f"0x{i:x}: {hex_data}  {ascii_data}")
+        elif cmd == "rsi":
+            print("rsi Memory:")
+            for i in range(rsi, rsi+100, 16):
+                data = uc.mem_read(i, 16)
+                hex_data = " ".join(f"{b:02x}" for b in data)
+                ascii_data = "".join(chr(b) if 32 <= b <
+                                     127 else "." for b in data)
+                print(f"0x{i:x}: {hex_data}  {ascii_data}")
+        elif cmd == "rbp":
+            print("rbp Memory:")
+            for i in range(rbp, rbp+100, 16):
+                data = uc.mem_read(i, 16)
+                hex_data = " ".join(f"{b:02x}" for b in data)
+                ascii_data = "".join(chr(b) if 32 <= b <
+                                     127 else "." for b in data)
+                print(f"0x{i:x}: {hex_data}  {ascii_data}")
+        elif cmd == "":
+            break
 
 
 def emulate_program(queue, payload):
@@ -184,7 +209,7 @@ def emulate_program(queue, payload):
     evalencoding, _ = ks.asm(meval, as_bytes=True)
     # Write code to memory and set PC to entry point
     uc.mem_write(ADDRESS, encoding)
-    uc.reg_write(UC_X86_REG_RBP, ADDRESS + SIZE - 0x1000 + 8)
+    uc.reg_write(UC_X86_REG_RBP, ADDRESS + SIZE - 0x1000)
     uc.reg_write(UC_X86_REG_RSP, ADDRESS + SIZE - 0x1000)
     uc.reg_write(UC_X86_REG_RIP, ADDRESS)
     uc.mem_write(GlobalMsgADDRESS, msgencoding)
@@ -195,11 +220,10 @@ def emulate_program(queue, payload):
     #uc.hook_add(UC_HOOK_INSN, hook_read, arg=(0, ADDRESS + 0x10, 400))
 
     # Start emulation
-    try:
-        uc.emu_start(ADDRESS, ADDRESS + len(encoding) + 0x10000)
-        queue.put(None)
-    except Exception as e:
-        queue.put(None)
 
-    # if __name__ == '__main__':
-    #     emulate_program(q)
+    uc.emu_start(ADDRESS, ADDRESS + len(encoding) + 0x10000)
+    queue.put(None)
+
+
+if __name__ == '__main__':
+    emulate_program(q, '111')
