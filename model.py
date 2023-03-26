@@ -81,6 +81,7 @@ def train(env_name, num_episodes, batch_size, gamma, epsilon, epsilon_min, epsil
             action = epsilon_greedy_policy(
                 state, epsilon, action_dim, device, Q)
             next_state, reward, done, _ = env.step(action)
+            print("payload 长度是{} 奖励{}".format(action, reward))
             episode_reward += reward
             buffer.push(state, action, reward, next_state, done)
             state = next_state
@@ -93,7 +94,7 @@ def train(env_name, num_episodes, batch_size, gamma, epsilon, epsilon_min, epsil
                 else:
                     break
 
-            if len(buffer) > batch_size and episode_reward != last_reward:
+            if len(buffer) > batch_size:
                 # 抽样
                 state_batch, action_batch, reward_batch, next_state_batch, done_batch = buffer.sample(
                     batch_size)
@@ -108,10 +109,10 @@ def train(env_name, num_episodes, batch_size, gamma, epsilon, epsilon_min, epsil
                 done_batch = torch.tensor(
                     done_batch, dtype=torch.float32).unsqueeze(1).to(device)
 
-                myations = Q(state_batch)
-                print(myations)
-                print(myations.shape)
-                print(action_batch.shape)
+                # myations = Q(state_batch)
+                # print(myations)
+                # print(myations.shape)
+                # print(action_batch.shape)
                 # 计算Q值
                 q_values = Q(state_batch).gather(2, action_batch)
 
@@ -136,8 +137,10 @@ def train(env_name, num_episodes, batch_size, gamma, epsilon, epsilon_min, epsil
 
         # 打印训练进度
         if (i_episode + 1) % 100 == 0:
-            print("Episode {}/{}: Average reward = {:.2f}".format(i_episode +
-                  1, num_episodes, np.mean(episode_rewards[-100:])))
+            episode_range = i_episode + 1 - 100
+            # print(episode_range)
+            print("Episode {}/{}: Average reward = {:.2f} episode_range = {}".format(i_episode +
+                  1, num_episodes, np.mean(episode_rewards[episode_range:]), episode_range))
     return Q
 
 

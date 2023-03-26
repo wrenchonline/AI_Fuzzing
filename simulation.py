@@ -221,9 +221,8 @@ def emulate_program(queue, payload):
         uc.emu_start(ADDRESS, ADDRESS + len(encoding) + 0x10000)
     except Exception as e:
         pass
-        # print("Clash\n")
     finally:
-        queue.put(None)
+        queue.put("Done")
 
 
 # if __name__ == '__main__':

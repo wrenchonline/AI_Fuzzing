@@ -10,6 +10,7 @@ import pickle
 
 from torchtext.data import Field
 import torch
+import time
 
 
 def process_disassembly(disassembly, vocab):
@@ -54,10 +55,6 @@ with open('vocab.pkl', 'rb') as f:
     vocab = pickle.load(f)
 
 
-# 创建一个空队列
-q = Queue()
-
-
 class MyEnv(gym.Env):
     def __init__(self):
         self.observation_space = spaces.Box(low=-1, high=255, shape=(3, 16))
@@ -82,10 +79,12 @@ class MyEnv(gym.Env):
         self.iscall = False
         self.isCheckRet = False
         self.step_count = 0
+        self.isVuln = False
         return self.state
 
     def step(self, action):
-        global q
+        # 创建一个空队列
+        q = Queue()
         done = False
         reward = 0
         assert self.action_space.contains(action), f"Invalid action {action}"
@@ -95,58 +94,60 @@ class MyEnv(gym.Env):
             self.t = Thread(target=emulate_program, args=(q, payload))
             self.isreset = False
             self.t.start()
-        item = q.get()
-        # 如果程序结束
-        if item is None:
-            done = True
-            return torch.zeros([3, 16], dtype=torch.float32).numpy(), 0, done, {}
-        # 处理元素
-        disassembly = item["disassembly"]
+        while True:
+            item = q.get()
+            # 如果程序结束
+            if item == "Done":
+                done = True
+                if reward != 0:
+                    return self.state.numpy(), reward, done, info
+                else:
+                    return torch.zeros([3, 16], dtype=torch.float32).numpy(), 0, done, {}
+            # 处理元素
+            disassembly = item["disassembly"]
 
-        # print(disassembly)
-        # 将 disassembly 数组转换为 具有字典的词向量
-        disassembly_tensor = process_disassembly(disassembly, vocab)
+            # print(disassembly)
+            # 将 disassembly 数组转换为 具有字典的词向量
+            disassembly_tensor = process_disassembly(disassembly, vocab)
 
-        #print("revice disassembly_tensor:%s\n" % item['return_adress'])
+            #print("revice disassembly_tensor:%s\n" % item['return_adress'])
 
-        return_address_arr = np.array(item['return_adress'])
-        # 将 numpy 数组转换为 PyTorch Tensor
-        return_address_tensor = torch.from_numpy(return_address_arr)
-        # 将 isCall 值转换为 PyTorch Tensor，并将其作为一个标量值存储
-        is_call_tensor = torch.tensor(
-            item['isCall']).int().to(torch.uint8)
-        # 获取ret
+            return_address_arr = np.array(item['return_adress'])
+            # 将 numpy 数组转换为 PyTorch Tensor
+            return_address_tensor = torch.from_numpy(return_address_arr)
+            # 将 isCall 值转换为 PyTorch Tensor，并将其作为一个标量值存储
+            is_call_tensor = torch.tensor(
+                item['isCall']).int().to(torch.uint8)
+            # 获取ret
 
-        # 关键如果call，我们记录返回地址
-        if item['isCall']:
-            if not self.skip:
-                self.iscall = True
-            reward = 0
-            done = False
-        if self.iscall:
-            self.step_count += 1
-            if self.step_count > 1:
-                self.record_return_addr = item['return_adress']
-                self.iscall = False
-                self.isCheckRet = True
-                self.skip = True
-        if self.record_return_addr:
-            if item['isRet']:
-                if self.record_return_addr != item['return_adress']:
-                    reward += 10
-                    done = True
-        self.state = combine_tensors(
-            disassembly_tensor, return_address_tensor, is_call_tensor)
-        if action == self.last_action:
-            reward = self.last_reward
+            # 关键如果call，我们记录返回地址
+            if item['isCall']:
+                if not self.skip:
+                    self.iscall = True
+                reward = 0
+                done = False
+            if self.iscall:
+                self.step_count += 1
+                if self.step_count > 1:
+                    self.record_return_addr = item['return_adress']
+                    self.iscall = False
+                    self.isCheckRet = True
+                    self.skip = True
+            if self.record_return_addr and item['isRet'] and self.record_return_addr != item['return_adress']:
+                reward += 10
+                self.isVuln = True
+                self.state = combine_tensors(
+                    disassembly_tensor, return_address_tensor, is_call_tensor)
+                info = {}
+                # return self.state.numpy(), reward, done, info
 
-        # self.last_action = action
-        # self.last_reward = reward
-        info = {}
-        return self.state.numpy(), reward, done, info
+            # self.last_action = action
+            # self.last_reward = reward
 
 
 # y = MyEnv()
+# state, reward, done, _ = y.step(12)
+# print("reward %d\t\n" % reward)
 
 # while True:
 #     state, reward, done, _ = y.step(12)
