@@ -61,12 +61,13 @@ q = Queue()
 class MyEnv(gym.Env):
     def __init__(self):
         self.observation_space = spaces.Box(low=-1, high=255, shape=(3, 16))
-        self.action_space = spaces.Discrete(12)
+        self.action_space = spaces.Discrete(20)
         self.seed()
         self.reset()
         self.last_action = None
         self.last_reward = None
         self.t = None
+        self.skip = False
 
     def seed(self, seed=None):
         self.np_random, seed = gym.utils.seeding.np_random(seed)
@@ -89,7 +90,7 @@ class MyEnv(gym.Env):
         reward = 0
         assert self.action_space.contains(action), f"Invalid action {action}"
         if self.isreset:
-            payload = generate_payload_string(1, action+1)
+            payload = generate_payload_string(action)
             print(payload)
             self.t = Thread(target=emulate_program, args=(q, payload))
             self.isreset = False
@@ -114,22 +115,26 @@ class MyEnv(gym.Env):
         # 将 isCall 值转换为 PyTorch Tensor，并将其作为一个标量值存储
         is_call_tensor = torch.tensor(
             item['isCall']).int().to(torch.uint8)
+        # 获取ret
 
         # 关键如果call，我们记录返回地址
         if item['isCall']:
-            self.iscall = True
+            if not self.skip:
+                self.iscall = True
             reward = 0
             done = False
         if self.iscall:
             self.step_count += 1
-            if self.step_count > 3:
+            if self.step_count > 1:
                 self.record_return_addr = item['return_adress']
                 self.iscall = False
                 self.isCheckRet = True
+                self.skip = True
         if self.record_return_addr:
-            if self.record_return_addr != item['return_adress']:
-                reward += 10
-                done = True
+            if item['isRet']:
+                if self.record_return_addr != item['return_adress']:
+                    reward += 10
+                    done = True
         self.state = combine_tensors(
             disassembly_tensor, return_address_tensor, is_call_tensor)
 
@@ -145,13 +150,11 @@ class MyEnv(gym.Env):
 y = MyEnv()
 
 while True:
-    state, reward, done, _ = y.step(2)
+    state, reward, done, _ = y.step(12)
     print("reward %d\t\n" % reward)
     if done:
         break
 
-
-payload = generate_payload_string(1, 2)
 # gym.register(
 #     id='MyEnv-v0',
 #     entry_point='myenv:MyEnv',

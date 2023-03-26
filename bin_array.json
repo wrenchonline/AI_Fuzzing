@@ -1,202 +1,162 @@
 [
     {
         "address": 1048576,
-        "mnemonic": "sub",
-        "op_str": "rsp, 0x64"
-    },
-    {
-        "address": 1048580,
-        "mnemonic": "mov",
-        "op_str": "rax, 0x190000"
-    },
-    {
-        "address": 1048587,
-        "mnemonic": "push",
-        "op_str": "rax"
-    },
-    {
-        "address": 1048588,
-        "mnemonic": "push",
-        "op_str": "0xc"
-    },
-    {
-        "address": 1048590,
-        "mnemonic": "call",
-        "op_str": "__FUNC__"
-    },
-    {
-        "address": 1048607,
         "mnemonic": "push",
         "op_str": "rbp"
     },
     {
-        "address": 1048608,
+        "address": 1048577,
+        "mnemonic": "sub",
+        "op_str": "rsp, 0x14"
+    },
+    {
+        "address": 1048581,
+        "mnemonic": "call",
+        "op_str": "0x100013"
+    },
+    {
+        "address": 1048595,
+        "mnemonic": "push",
+        "op_str": "rbp"
+    },
+    {
+        "address": 1048596,
         "mnemonic": "mov",
         "op_str": "rbp, rsp"
     },
     {
-        "address": 1048611,
+        "address": 1048599,
         "mnemonic": "sub",
-        "op_str": "rsp, rsi"
+        "op_str": "rsp, 0xc"
     },
     {
-        "address": 1048614,
+        "address": 1048603,
         "mnemonic": "mov",
-        "op_str": "r8, rsi"
+        "op_str": "rcx, 0x64"
+    },
+    {
+        "address": 1048610,
+        "mnemonic": "mov",
+        "op_str": "rdi, 0x190000"
     },
     {
         "address": 1048617,
-        "mnemonic": "mov",
-        "op_str": "rsi, rax"
+        "mnemonic": "cld",
+        "op_str": ""
+    },
+    {
+        "address": 1048618,
+        "mnemonic": "repne scasb",
+        "op_str": "al, byte ptr [rdi]"
+    },
+    {
+        "address": 1048618,
+        "mnemonic": "repne scasb",
+        "op_str": "al, byte ptr [rdi]"
+    },
+    {
+        "address": 1048618,
+        "mnemonic": "repne scasb",
+        "op_str": "al, byte ptr [rdi]"
+    },
+    {
+        "address": 1048618,
+        "mnemonic": "repne scasb",
+        "op_str": "al, byte ptr [rdi]"
+    },
+    {
+        "address": 1048618,
+        "mnemonic": "repne scasb",
+        "op_str": "al, byte ptr [rdi]"
+    },
+    {
+        "address": 1048618,
+        "mnemonic": "repne scasb",
+        "op_str": "al, byte ptr [rdi]"
     },
     {
         "address": 1048620,
-        "mnemonic": "lea",
-        "op_str": "rdi, [rsp]"
+        "mnemonic": "sub",
+        "op_str": "rdi, 0x190000"
     },
     {
-        "address": 1048624,
+        "address": 1048627,
         "mnemonic": "mov",
-        "op_str": "rcx, 0x16"
+        "op_str": "rax, rdi"
     },
     {
-        "address": 1048631,
+        "address": 1048630,
+        "mnemonic": "mov",
+        "op_str": "rsi, 0x190000"
+    },
+    {
+        "address": 1048637,
+        "mnemonic": "lea",
+        "op_str": "rdi, [rsp + 8]"
+    },
+    {
+        "address": 1048642,
+        "mnemonic": "mov",
+        "op_str": "rcx, rax"
+    },
+    {
+        "address": 1048645,
         "mnemonic": "rep movsb",
         "op_str": "byte ptr [rdi], byte ptr [rsi]"
     },
     {
-        "address": 1048631,
+        "address": 1048645,
         "mnemonic": "rep movsb",
         "op_str": "byte ptr [rdi], byte ptr [rsi]"
     },
     {
-        "address": 1048631,
+        "address": 1048645,
         "mnemonic": "rep movsb",
         "op_str": "byte ptr [rdi], byte ptr [rsi]"
     },
     {
-        "address": 1048631,
+        "address": 1048645,
         "mnemonic": "rep movsb",
         "op_str": "byte ptr [rdi], byte ptr [rsi]"
     },
     {
-        "address": 1048631,
+        "address": 1048645,
         "mnemonic": "rep movsb",
         "op_str": "byte ptr [rdi], byte ptr [rsi]"
     },
     {
-        "address": 1048631,
+        "address": 1048645,
         "mnemonic": "rep movsb",
         "op_str": "byte ptr [rdi], byte ptr [rsi]"
     },
     {
-        "address": 1048631,
+        "address": 1048645,
         "mnemonic": "rep movsb",
         "op_str": "byte ptr [rdi], byte ptr [rsi]"
     },
     {
-        "address": 1048631,
-        "mnemonic": "rep movsb",
-        "op_str": "byte ptr [rdi], byte ptr [rsi]"
-    },
-    {
-        "address": 1048631,
-        "mnemonic": "rep movsb",
-        "op_str": "byte ptr [rdi], byte ptr [rsi]"
-    },
-    {
-        "address": 1048631,
-        "mnemonic": "rep movsb",
-        "op_str": "byte ptr [rdi], byte ptr [rsi]"
-    },
-    {
-        "address": 1048631,
-        "mnemonic": "rep movsb",
-        "op_str": "byte ptr [rdi], byte ptr [rsi]"
-    },
-    {
-        "address": 1048631,
-        "mnemonic": "rep movsb",
-        "op_str": "byte ptr [rdi], byte ptr [rsi]"
-    },
-    {
-        "address": 1048631,
-        "mnemonic": "rep movsb",
-        "op_str": "byte ptr [rdi], byte ptr [rsi]"
-    },
-    {
-        "address": 1048631,
-        "mnemonic": "rep movsb",
-        "op_str": "byte ptr [rdi], byte ptr [rsi]"
-    },
-    {
-        "address": 1048631,
-        "mnemonic": "rep movsb",
-        "op_str": "byte ptr [rdi], byte ptr [rsi]"
-    },
-    {
-        "address": 1048631,
-        "mnemonic": "rep movsb",
-        "op_str": "byte ptr [rdi], byte ptr [rsi]"
-    },
-    {
-        "address": 1048631,
-        "mnemonic": "rep movsb",
-        "op_str": "byte ptr [rdi], byte ptr [rsi]"
-    },
-    {
-        "address": 1048631,
-        "mnemonic": "rep movsb",
-        "op_str": "byte ptr [rdi], byte ptr [rsi]"
-    },
-    {
-        "address": 1048631,
-        "mnemonic": "rep movsb",
-        "op_str": "byte ptr [rdi], byte ptr [rsi]"
-    },
-    {
-        "address": 1048631,
-        "mnemonic": "rep movsb",
-        "op_str": "byte ptr [rdi], byte ptr [rsi]"
-    },
-    {
-        "address": 1048631,
-        "mnemonic": "rep movsb",
-        "op_str": "byte ptr [rdi], byte ptr [rsi]"
-    },
-    {
-        "address": 1048631,
-        "mnemonic": "rep movsb",
-        "op_str": "byte ptr [rdi], byte ptr [rsi]"
-    },
-    {
-        "address": 1048631,
-        "mnemonic": "rep movsb",
-        "op_str": "byte ptr [rdi], byte ptr [rsi]"
-    },
-    {
-        "address": 1048633,
+        "address": 1048647,
         "mnemonic": "add",
-        "op_str": "rsp, r8"
+        "op_str": "rsp, 0xc"
     },
     {
-        "address": 1048636,
+        "address": 1048651,
         "mnemonic": "mov",
         "op_str": "rsp, rbp"
     },
     {
-        "address": 1048639,
+        "address": 1048654,
         "mnemonic": "pop",
         "op_str": "rbp"
     },
     {
-        "address": 1048640,
+        "address": 1048655,
         "mnemonic": "ret",
         "op_str": ""
     },
     {
-        "address": 174353522,
-        "mnemonic": "jbe",
-        "op_str": "0xa646cd6"
+        "address": 1048586,
+        "mnemonic": "add",
+        "op_str": "rsp, 0x14"
     }
 ]

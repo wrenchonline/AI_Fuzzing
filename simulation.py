@@ -17,9 +17,6 @@ Main = """
 _start:
     push rbp
     sub rsp, 20
-    mov rax, 0x190000
-    push rax
-    push 12
     call overflow
     add rsp, 20
     xor rax, 0
@@ -98,7 +95,7 @@ def hook_code(uc, address, size, user_data):
         if i.mnemonic == "call":
             isCall = True
         # 是否有ret
-        if i.mnemonic == "call":
+        if i.mnemonic == "ret":
             isRet = True
             # 读取返回地址
             # least_RSP = uc.mem_read(rsp, 8)
@@ -154,38 +151,38 @@ def hook_code(uc, address, size, user_data):
     #     ascii_data = "".join(chr(b) if 32 <= b < 127 else "." for b in data)
     #     print(f"0x{i:x}: {hex_data}  {ascii_data}")
 
-    while True:
-        cmd = input("Press enter to step or q to quit: ")
-        if cmd == "q":
-            with open('bin_array.json', 'w+') as f:
-                json.dump(opt, f)
-            exit(0)
-        elif cmd == "rax":
-            print("RAX Memory:")
-            for i in range(rax, rax+100, 16):
-                data = uc.mem_read(i, 16)
-                hex_data = " ".join(f"{b:02x}" for b in data)
-                ascii_data = "".join(chr(b) if 32 <= b <
-                                     127 else "." for b in data)
-                print(f"0x{i:x}: {hex_data}  {ascii_data}")
-        elif cmd == "rsi":
-            print("rsi Memory:")
-            for i in range(rsi, rsi+100, 16):
-                data = uc.mem_read(i, 16)
-                hex_data = " ".join(f"{b:02x}" for b in data)
-                ascii_data = "".join(chr(b) if 32 <= b <
-                                     127 else "." for b in data)
-                print(f"0x{i:x}: {hex_data}  {ascii_data}")
-        elif cmd == "rbp":
-            print("rbp Memory:")
-            for i in range(rbp, rbp+100, 16):
-                data = uc.mem_read(i, 16)
-                hex_data = " ".join(f"{b:02x}" for b in data)
-                ascii_data = "".join(chr(b) if 32 <= b <
-                                     127 else "." for b in data)
-                print(f"0x{i:x}: {hex_data}  {ascii_data}")
-        elif cmd == "":
-            break
+    # while True:
+    #     cmd = input("Press enter to step or q to quit: ")
+    #     if cmd == "q":
+    #         with open('bin_array.json', 'w+') as f:
+    #             json.dump(opt, f)
+    #         exit(0)
+    #     elif cmd == "rax":
+    #         print("RAX Memory:")
+    #         for i in range(rax, rax+100, 16):
+    #             data = uc.mem_read(i, 16)
+    #             hex_data = " ".join(f"{b:02x}" for b in data)
+    #             ascii_data = "".join(chr(b) if 32 <= b <
+    #                                  127 else "." for b in data)
+    #             print(f"0x{i:x}: {hex_data}  {ascii_data}")
+    #     elif cmd == "rsi":
+    #         print("rsi Memory:")
+    #         for i in range(rsi, rsi+100, 16):
+    #             data = uc.mem_read(i, 16)
+    #             hex_data = " ".join(f"{b:02x}" for b in data)
+    #             ascii_data = "".join(chr(b) if 32 <= b <
+    #                                  127 else "." for b in data)
+    #             print(f"0x{i:x}: {hex_data}  {ascii_data}")
+    #     elif cmd == "rbp":
+    #         print("rbp Memory:")
+    #         for i in range(rbp, rbp+100, 16):
+    #             data = uc.mem_read(i, 16)
+    #             hex_data = " ".join(f"{b:02x}" for b in data)
+    #             ascii_data = "".join(chr(b) if 32 <= b <
+    #                                  127 else "." for b in data)
+    #             print(f"0x{i:x}: {hex_data}  {ascii_data}")
+    #     elif cmd == "":
+    #         break
 
 
 def emulate_program(queue, payload):
@@ -220,10 +217,13 @@ def emulate_program(queue, payload):
     #uc.hook_add(UC_HOOK_INSN, hook_read, arg=(0, ADDRESS + 0x10, 400))
 
     # Start emulation
+    try:
+        uc.emu_start(ADDRESS, ADDRESS + len(encoding) + 0x10000)
+    except Exception as e:
+        print("Clash\n")
+    finally:
+        queue.put(None)
 
-    uc.emu_start(ADDRESS, ADDRESS + len(encoding) + 0x10000)
-    queue.put(None)
 
-
-if __name__ == '__main__':
-    emulate_program(q, '111')
+# if __name__ == '__main__':
+#     emulate_program(q, '11111')
