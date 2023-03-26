@@ -91,7 +91,7 @@ class MyEnv(gym.Env):
         assert self.action_space.contains(action), f"Invalid action {action}"
         if self.isreset:
             payload = generate_payload_string(action)
-            print(payload)
+            # print(payload)
             self.t = Thread(target=emulate_program, args=(q, payload))
             self.isreset = False
             self.t.start()
@@ -99,11 +99,11 @@ class MyEnv(gym.Env):
         # 如果程序结束
         if item is None:
             done = True
-            return torch.zeros((3, 16), dtype=torch.uint8), 0, done, {}
+            return torch.zeros([3, 16], dtype=torch.float32).numpy(), 0, done, {}
         # 处理元素
         disassembly = item["disassembly"]
 
-        print(disassembly)
+        # print(disassembly)
         # 将 disassembly 数组转换为 具有字典的词向量
         disassembly_tensor = process_disassembly(disassembly, vocab)
 
@@ -137,14 +137,13 @@ class MyEnv(gym.Env):
                     done = True
         self.state = combine_tensors(
             disassembly_tensor, return_address_tensor, is_call_tensor)
-
         if action == self.last_action:
             reward = self.last_reward
 
         # self.last_action = action
         # self.last_reward = reward
         info = {}
-        return self.state.numpy().tolist(), reward, done, info
+        return self.state.numpy(), reward, done, info
 
 
 # y = MyEnv()

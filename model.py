@@ -36,9 +36,11 @@ class ReplayBuffer():
     def sample(self, batch_size):
         state, action, reward, next_state, done = zip(
             *random.sample(self.buffer, batch_size))
-        newstate = np.array(state)
-        newnext_state = np.array(next_state)
-        return newstate, action, reward, np.array(newnext_state), done
+        # newstate = np.array(state)
+
+        # newnext_state = np.array(next_state)
+        # print(newnext_state.shape)
+        return state, action, reward, next_state, done
 
     def __len__(self):
         return len(self.buffer)
@@ -52,8 +54,9 @@ def epsilon_greedy_policy(state, epsilon, action_dim, device, Q):
         state = torch.tensor(
             state, dtype=torch.float32).unsqueeze(0).to(device)
         with torch.no_grad():
-            q_values = Q(state)
-            return q_values.argmax(dim=1).item()
+            q_values = Q(state).argmax(dim=-1)
+            # 我设置（1, 1, 1），所以在 [1, 3, 20] 索引就是[1-1 = 0, 3-1 = 2]
+            return q_values[0, 2].item()
 
 
 def train(env_name, num_episodes, batch_size, gamma, epsilon, epsilon_min, epsilon_decay, target_update, lr):
@@ -97,7 +100,7 @@ def train(env_name, num_episodes, batch_size, gamma, epsilon, epsilon_min, epsil
                 state_batch = torch.tensor(
                     state_batch, dtype=torch.float32).to(device)
                 action_batch = torch.tensor(
-                    action_batch, dtype=torch.long).unsqueeze(1).to(device)
+                    action_batch, dtype=torch.long).unsqueeze(1).repeat(1, 1, 1).to(device)
                 reward_batch = torch.tensor(
                     reward_batch, dtype=torch.float32).unsqueeze(1).to(device)
                 next_state_batch = torch.tensor(
@@ -105,8 +108,12 @@ def train(env_name, num_episodes, batch_size, gamma, epsilon, epsilon_min, epsil
                 done_batch = torch.tensor(
                     done_batch, dtype=torch.float32).unsqueeze(1).to(device)
 
+                myations = Q(state_batch)
+                print(myations)
+                print(myations.shape)
+                print(action_batch.shape)
                 # 计算Q值
-                q_values = Q(state_batch).gather(1, action_batch)
+                q_values = Q(state_batch).gather(2, action_batch)
 
                 # 计算目标Q值
                 q_values_next = Q_target(next_state_batch)
