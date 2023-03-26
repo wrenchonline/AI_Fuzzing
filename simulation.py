@@ -6,7 +6,7 @@ import json
 
 from queue import Queue
 
-debug_mode = True
+debug_mode = False
 # 创建一个空队列
 q = Queue()
 
@@ -220,7 +220,8 @@ def emulate_program(queue, payload):
     try:
         uc.emu_start(ADDRESS, ADDRESS + len(encoding) + 0x10000)
     except Exception as e:
-        print("Clash\n")
+        pass
+        # print("Clash\n")
     finally:
         queue.put(None)
 

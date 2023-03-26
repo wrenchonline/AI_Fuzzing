@@ -144,16 +144,16 @@ class MyEnv(gym.Env):
         # self.last_action = action
         # self.last_reward = reward
         info = {}
-        return self.state, reward, done, info
+        return self.state.numpy().tolist(), reward, done, info
 
 
-y = MyEnv()
+# y = MyEnv()
 
-while True:
-    state, reward, done, _ = y.step(12)
-    print("reward %d\t\n" % reward)
-    if done:
-        break
+# while True:
+#     state, reward, done, _ = y.step(12)
+#     print("reward %d\t\n" % reward)
+#     if done:
+#         break
 
 # gym.register(
 #     id='MyEnv-v0',

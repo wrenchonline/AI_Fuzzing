@@ -1,11 +1,13 @@
 import random
 import numpy as np
-import gym
+#import gym
 import torch
 import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
 from collections import deque
+
+from customgym import MyEnv
 
 
 # 神经网络模型
@@ -34,7 +36,9 @@ class ReplayBuffer():
     def sample(self, batch_size):
         state, action, reward, next_state, done = zip(
             *random.sample(self.buffer, batch_size))
-        return np.array(state), action, reward, np.array(next_state), done
+        newstate = np.array(state)
+        newnext_state = np.array(next_state)
+        return newstate, action, reward, np.array(newnext_state), done
 
     def __len__(self):
         return len(self.buffer)
@@ -53,8 +57,8 @@ def epsilon_greedy_policy(state, epsilon, action_dim, device, Q):
 
 
 def train(env_name, num_episodes, batch_size, gamma, epsilon, epsilon_min, epsilon_decay, target_update, lr):
-    env = gym.make(env_name)
-    obs_dim = env.observation_space.shape[0]
+    env = MyEnv()
+    obs_dim = env.observation_space.shape[1]
     action_dim = env.action_space.n
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -132,7 +136,7 @@ def train(env_name, num_episodes, batch_size, gamma, epsilon, epsilon_min, epsil
 
 train(env_name='MyEnv',
       num_episodes=1000,
-      batch_size=64,
+      batch_size=1,
       gamma=0.99,
       epsilon=1.0,
       epsilon_min=0.01,
