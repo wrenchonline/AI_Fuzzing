@@ -77,11 +77,14 @@ class MyEnv(gym.Env):
         self.last_action = None
         self.last_reward = None
         self.isreset = True
+        self.record_return_addr = None
+        self.iscall = False
         return self.state
 
     def step(self, action):
         global q
         done = False
+        reward = 0
         assert self.action_space.contains(action), f"Invalid action {action}"
         if self.isreset:
             payload = generate_payload_string(1, action+1)
@@ -89,12 +92,19 @@ class MyEnv(gym.Env):
             self.isreset = False
             self.t.start()
         item = q.get()
+        # 如果程序结束
         if item is None:
             done = True
+            return torch.zeros((3, 16), dtype=torch.uint8), 0, done, {}
         # 处理元素
         disassembly = item["disassembly"]
+
         print(disassembly)
+        # 将 disassembly 数组转换为 具有字典的词向量
         disassembly_tensor = process_disassembly(disassembly, vocab)
+
+        #print("revice disassembly_tensor:%s\n" % item['return_adress'])
+
         return_address_arr = np.array(item['return_adress'])
         # 将 numpy 数组转换为 PyTorch Tensor
         return_address_tensor = torch.from_numpy(return_address_arr)
@@ -102,21 +112,35 @@ class MyEnv(gym.Env):
         is_call_tensor = torch.tensor(
             item['isCall']).int().to(torch.uint8)
 
+        # 关键如果call，我们记录返回地址
+        if item['isCall']:
+            self.iscall = item['isCall']
+            self.record_return_addr = item['return_adress']
+            reward = 0
+            done = False
+        elif self.record_return_addr:
+            if self.record_return_addr == item['return_adress']:
+                reward += 10
         self.state = combine_tensors(
             disassembly_tensor, return_address_tensor, is_call_tensor)
 
         if action == self.last_action:
             reward = self.last_reward
 
-        self.last_action = action
-        self.last_reward = reward
+        # self.last_action = action
+        # self.last_reward = reward
         info = {}
         return self.state, reward, done, info
 
 
 y = MyEnv()
 
-state, reward, done, _ = y.step(1)
+while True:
+    state, reward, done, _ = y.step(10)
+    if done:
+        break
+    print("reward %d\t\n" % reward)
+
 
 payload = generate_payload_string(1, 2)
 # gym.register(

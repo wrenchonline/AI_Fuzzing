@@ -6,8 +6,10 @@ import json
 
 from queue import Queue
 
+debug_mode = False
 # 创建一个空队列
 q = Queue()
+
 
 #fuzzing + ai
 
@@ -73,12 +75,13 @@ def hook_code(uc, address, size, user_data):
     md = capstone.Cs(capstone.CS_ARCH_X86, capstone.CS_MODE_64)
     code = uc.mem_read(address, size)
     asm = list(md.disasm(code, address))
-
-    print(">>> Tracing instruction at 0x%x, instruction size = 0x%x" %
-          (address, size))
-    print(">>> Instruction disassembly:")
+    if debug_mode:
+        print(">>> Tracing instruction at 0x%x, instruction size = 0x%x" %
+              (address, size))
+        print(">>> Instruction disassembly:")
     for i in asm:
-        print("    0x%x:\t%s\t%s" % (i.address, i.mnemonic, i.op_str))
+        if debug_mode:
+            print("    0x%x:\t%s\t%s" % (i.address, i.mnemonic, i.op_str))
         disassembly = {
             'address': i.address,
             'mnemonic': i.mnemonic,
@@ -94,25 +97,31 @@ def hook_code(uc, address, size, user_data):
         opt.append(disassembly)
 
     rsp = uc.reg_read(UC_X86_REG_RSP)
-    print(">>> RSP is 0x%x" % rsp)
+    if debug_mode:
+        print(">>> RSP is 0x%x" % rsp)
 
     rax = uc.reg_read(UC_X86_REG_RAX)
-    print(">>> rax is 0x%x" % rax)
+    if debug_mode:
+        print(">>> rax is 0x%x" % rax)
 
     rsi = uc.reg_read(UC_X86_REG_RSI)
-    print(">>> rsi is 0x%x" % rsi)
+    if debug_mode:
+        print(">>> rsi is 0x%x" % rsi)
 
     # Print rsp memory values
-    print("RSP Memory:")
+    if debug_mode:
+        print("RSP Memory:")
     for i in range(rsp, rsp+100, 16):
         data = uc.mem_read(i, 16)
         hex_data = " ".join(f"{b:02x}" for b in data)
         ascii_data = "".join(chr(b) if 32 <= b < 127 else "." for b in data)
-        print(f"0x{i:x}: {hex_data}  {ascii_data}")
+        if debug_mode:
+            print(f"0x{i:x}: {hex_data}  {ascii_data}")
 
     # 读取返回地址
     hex_data = uc.mem_read(rsp, 8)
-    print(hex_data)
+    if debug_mode:
+        print(hex_data)
     # if least_RSP == hex_data:
     #     pass
     # global isCall
