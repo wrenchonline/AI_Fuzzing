@@ -141,15 +141,9 @@ def hook_code(uc, address, size, user_data):
     # global isCall
     debug_msg = {"disassembly": mdisassembly,
                  "isCall": isCall, "return_adress": hex_data, "isRet": isRet}
+
     q.put(debug_msg)
     # print("sssss")
-
-    # print("MSG Memory:")
-    # for i in range(0x190000, 0x190000+0x20, 16):
-    #     data = uc.mem_read(i, 16)
-    #     hex_data = " ".join(f"{b:02x}" for b in data)
-    #     ascii_data = "".join(chr(b) if 32 <= b < 127 else "." for b in data)
-    #     print(f"0x{i:x}: {hex_data}  {ascii_data}")
 
     # while True:
     #     cmd = input("Press enter to step or q to quit: ")

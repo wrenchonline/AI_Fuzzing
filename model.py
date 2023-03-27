@@ -81,7 +81,7 @@ def train(env_name, num_episodes, batch_size, gamma, epsilon, epsilon_min, epsil
             action = epsilon_greedy_policy(
                 state, epsilon, action_dim, device, Q)
             next_state, reward, done, _ = env.step(action)
-            print("payload 长度是{} 奖励{}".format(action, reward))
+            # print("payload 长度是{} 奖励{}".format(action, reward))
             episode_reward += reward
             buffer.push(state, action, reward, next_state, done)
             state = next_state

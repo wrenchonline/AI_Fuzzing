@@ -61,8 +61,6 @@ class MyEnv(gym.Env):
         self.action_space = spaces.Discrete(20)
         self.seed()
         self.reset()
-        self.last_action = None
-        self.last_reward = None
         self.t = None
         self.skip = False
 
@@ -72,14 +70,14 @@ class MyEnv(gym.Env):
 
     def reset(self):
         self.state = np.zeros((3, 16))
-        self.last_action = None
-        self.last_reward = None
         self.isreset = True
         self.record_return_addr = None
         self.iscall = False
         self.isCheckRet = False
         self.step_count = 0
+        self.skip = False
         self.isVuln = False
+        self.TheEnd = False
         return self.state
 
     def step(self, action):
@@ -95,11 +93,14 @@ class MyEnv(gym.Env):
             self.isreset = False
             self.t.start()
         while True:
-            item = q.get()
+            try:
+                item = q.get(timeout=3)
+            except Exception as e:
+                return torch.zeros([3, 16], dtype=torch.float32).numpy(), 0, False, {"timeout": e}
             # 如果程序结束
             if item == "Done":
                 done = True
-                if reward != 0:
+                if self.isVuln:
                     return self.state.numpy(), reward, done, info
                 else:
                     return torch.zeros([3, 16], dtype=torch.float32).numpy(), 0, done, {}
@@ -110,7 +111,7 @@ class MyEnv(gym.Env):
             # 将 disassembly 数组转换为 具有字典的词向量
             disassembly_tensor = process_disassembly(disassembly, vocab)
 
-            #print("revice disassembly_tensor:%s\n" % item['return_adress'])
+            # print("revice disassembly_tensor:%s\n" % item['return_adress'])
 
             return_address_arr = np.array(item['return_adress'])
             # 将 numpy 数组转换为 PyTorch Tensor
@@ -124,7 +125,7 @@ class MyEnv(gym.Env):
             if item['isCall']:
                 if not self.skip:
                     self.iscall = True
-                reward = 0
+                # reward = 0
                 done = False
             if self.iscall:
                 self.step_count += 1
@@ -133,12 +134,18 @@ class MyEnv(gym.Env):
                     self.iscall = False
                     self.isCheckRet = True
                     self.skip = True
-            if self.record_return_addr and item['isRet'] and self.record_return_addr != item['return_adress']:
+                    self.step_count = 0
+            # if item['isRet']:
+            #     self.TheEnd = True
+            if self.record_return_addr and item['isRet'] and self.record_return_addr != item['return_adress'] and reward == 0 and not self.TheEnd:
                 reward += 10
                 self.isVuln = True
+                self.record_return_addr = None
                 self.state = combine_tensors(
                     disassembly_tensor, return_address_tensor, is_call_tensor)
                 info = {}
+            elif item['isRet']:
+                self.TheEnd = True
                 # return self.state.numpy(), reward, done, info
 
             # self.last_action = action
@@ -146,8 +153,17 @@ class MyEnv(gym.Env):
 
 
 # y = MyEnv()
+# state, reward, done, _ = y.step(1)
+# print("reward %d\t\n" % reward)
+
+# y.reset()
 # state, reward, done, _ = y.step(12)
 # print("reward %d\t\n" % reward)
+
+# y.reset()
+# state, reward, done, _ = y.step(4)
+# print("reward %d\t\n" % reward)
+
 
 # while True:
 #     state, reward, done, _ = y.step(12)
